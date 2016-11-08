@@ -42,7 +42,6 @@ def webptt_tilte_crwaler(board_name, eassy_bound=1, push_l_bound=0, title_key_wo
     soup = bs4.BeautifulSoup(res.text, 'lxml')
     urls = []
     for index, container in enumerate(soup.select(".r-ent")):
-        print(index, container.text)
 
         push_count = 0
         for push_tag in container.select(".hl"):
@@ -105,7 +104,7 @@ def photo_crawler(url, direction='photo'):
         return None
     time.sleep(0.1)
     photo_prefixs = ("jpg", "png", "bmp", "gif")
-    invalid_char = tuple([i for i in "*/\[]:;|=,.?< "])
+    invalid_char = tuple([i for i in "*/\[]:;|=,.?<> "])
     imgs = []
     soup = bs4.BeautifulSoup(res.text, 'lxml')
     for img in soup.find_all('a', href=True):
