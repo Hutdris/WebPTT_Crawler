@@ -25,8 +25,79 @@ def ptt_request(url):
         url=url,
         cookies={'over18': '1'}, verify=True
         )
+def webptt_title_crawler(board_name, title_keywords, search_depth=100):
+    """
 
-def webptt_tilte_crwaler(board_name, eassy_bound=1, push_l_bound=0, title_key_words = None):
+    :param board_name:
+    :param title_keywords: tuple of key words, using and
+    :param search_depth: backward search pages
+    :return:
+    """
+
+    idx = get_latest_page_index(board_name)
+    current_depth = 0
+    urls = []
+    if not idx:
+        print("no index Error")
+        return None
+
+    while current_depth < search_depth:
+        try:
+            url = "https://www.ptt.cc/bbs/{b_name}/index{index}.html".format(b_name=board_name, index=idx)
+            res = ptt_request(url)
+
+        except:
+            print('Request error')
+            return None
+        soup = bs4.BeautifulSoup(res.text, 'lxml')
+        for index, container in enumerate(soup.select(".r-ent")):
+            for title in container.select(".title"):
+                if title_keywords in title.text:
+                    for tag in title.find_all('a', href=True):
+                        urls.append("https://www.ptt.cc/" + tag["href"])
+        current_depth += 1
+        idx -= 1
+        print("{} result in {} pages...".format(len(urls), current_depth))
+
+    print(urls)
+    return "opps"
+"""
+        for push_tag in container.select(".hl"):
+            try:
+                if push_tag.text == '爆':
+                    push_count = 101
+                else:
+                    push_count = int(push_tag.text)
+            except ValueError:
+                push_count = -1
+        if push_count >= push_l_bound and title_key_words:
+            for tag in container.find_all('a', href=True):
+                urls.append("https://www.ptt.cc/" + tag["href"])
+
+    while latest_page_index > 0 and len(urls) < eassy_bound:
+        latest_page_index -= 1
+        url = "https://www.ptt.cc/bbs/{b_name}/index{index}.html".format(b_name=board_name, index=latest_page_index)
+        res = ptt_request(url)
+        soup = bs4.BeautifulSoup(res.text, 'lxml')
+        for container in soup.select(".r-ent"):
+            push_count = 0
+            for push_tag in container.select(".hl"):
+                try:
+                    if push_tag.text == '爆':
+                        push_count = 101
+                    else:
+                        push_count = int(push_tag.text)
+                except ValueError: #XX判斷 待補
+                    push_count = -1
+            if push_count >= push_l_bound:
+                for tag in container.find_all('a', href=True):
+                    urls.append("https://www.ptt.cc/" + tag["href"])
+    print("#urls:{}".format(len(urls)))
+    return urls
+"""
+
+
+def webptt_push_crwaler(board_name, eassy_bound=1, push_l_bound=0):
     latest_page_index = get_latest_page_index(board_name)
     if not latest_page_index:
         print("no index Error")
@@ -149,7 +220,7 @@ def photo_crawler(url, direction='photo'):
             #    print('WriteFile Error', info_file)
 
 def crawler(board, push_bound = 10, eassy_bound = 10):
-    urls = webptt_tilte_crwaler(board, push_bound, eassy_bound)
+    urls = webptt_push_crwaler(board, push_bound, eassy_bound)
     for url in urls:
         photo_crawler(url, direction='{}_{}_{}'.format(board, eassy_bound, push_bound))
 #photo_crawler('https://www.ptt.cc/bbs/Gossiping/M.1478099361.A.AF8.html', direction='test')
