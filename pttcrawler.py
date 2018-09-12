@@ -4,6 +4,7 @@ import os
 import time
 import requests
 import bs4
+import re
 
 #InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised.
 #urllib3.disable_warnings()   #需要用certifi驗證連線 待補
@@ -60,7 +61,7 @@ def webptt_title_crawler(board_name, title_keywords, search_depth=100):
         print("{} result in {} pages...".format(len(urls), current_depth))
 
     print(urls)
-    return "opps"
+    return urls
 """
         for push_tag in container.select(".hl"):
             try:
@@ -95,6 +96,26 @@ def webptt_title_crawler(board_name, title_keywords, search_depth=100):
     print("#urls:{}".format(len(urls)))
     return urls
 """
+
+def price_extrater(urls, price_patten=r"""交易價格]：.*\d*[.,]*\d{3,}"""):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36'}
+    cookies = {'_ts_id': ''}
+    price_patten = re.compile(price_patten)
+    digits_patten = re.compile(r'\d+')
+    reports = [] #(price, title, url)
+    for url in urls:
+        try:
+            res = ptt_request(url)
+        except:
+            print("Invalid url!: ".format(url))
+        time.sleep(0.1)
+        soup = bs4.BeautifulSoup(res.text, 'lxml')
+        match = re.search(price_patten, soup.prettify())
+        if match:
+            digits = digits_patten.findall(match.group())
+            reports.append(("".join(digits), soup.title.text, url))
+    return reports
 
 
 def webptt_push_crwaler(board_name, eassy_bound=1, push_l_bound=0):
@@ -218,6 +239,12 @@ def photo_crawler(url, direction='photo'):
                 fw.write(title)
             #except:
             #    print('WriteFile Error', info_file)
+def report2csv(report, path='./report.csv'):
+    with open(path, 'w', encoding='utf8') as fw:
+        for pair in sorted(report, key=lambda x: x[0]):
+            line = ",".join(pair)
+            print(line)
+            fw.write(line+'\n')
 
 def crawler(board, push_bound = 10, eassy_bound = 10):
     urls = webptt_push_crwaler(board, push_bound, eassy_bound)
